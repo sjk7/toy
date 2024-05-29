@@ -22,7 +22,7 @@ if (UNIX)
         )
 endif (UNIX)
 
-add_executable(toy part1.c)
+add_executable(toy main.c)
 
 if (UNIX)
     target_include_directories(toy PRIVATE ${/opt/X11/include/})

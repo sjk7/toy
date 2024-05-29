@@ -8,7 +8,7 @@
             "name": "(lldb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "enter program name, for example ${workspaceFolder}/a.out",
+            "program": "${workspaceFolder}/build/toy",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
@@ -16,6 +16,5 @@
             "externalConsole": false,
             "MIMode": "lldb"
         }
-
     ]
 }

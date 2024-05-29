@@ -1,7 +1,7 @@
 [
 {
   "directory": "/Users/stevekerr/code/toy/build",
-  "command": "/usr/local/opt/llvm/bin/clang -DPLATFORM_LINUX -I/opt/local/include -I/usr/X11R6/include -I/opt/X11/include -g -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.4 -o CMakeFiles/toy.dir/part1.c.o -c /Users/stevekerr/code/toy/part1.c",
-  "file": "/Users/stevekerr/code/toy/part1.c"
+  "command": "/usr/local/opt/llvm/bin/clang -DPLATFORM_LINUX -I/opt/local/include -I/usr/X11R6/include -I/opt/X11/include -g -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.4 -o CMakeFiles/toy.dir/main.c.o -c /Users/stevekerr/code/toy/main.c",
+  "file": "/Users/stevekerr/code/toy/main.c"
 }
 ]

@@ -343,6 +343,9 @@ int ElementBMessageClass(Element *element, Message message, int di, void *dp) {
 	return 0;
 }
 
+// test clang-format
+typedef struct test{} TEST;
+
 int main() {
 	Initialise();
 	Window *window = WindowCreate("Hello, world", 300, 200);
