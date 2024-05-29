@@ -1,4 +1,4 @@
-// Add element hierarchy infrastructure.
+// Add messaging infrastructure.
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -13,7 +13,6 @@
 #endif
 
 #ifdef PLATFORM_LINUX
-// #pragma message("Project building for Unix")
 #define Window X11Window
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -26,9 +25,16 @@
 // Definitions.
 /////////////////////////////////////////
 
+typedef enum Message {
+	MSG_USER,
+} Message;
+
 typedef struct Rectangle {
 	int l, r, t, b;
 } Rectangle;
+
+struct Element;
+typedef int (*MessageHandler)(struct Element *element, Message message, int di, void *dp);
 
 typedef struct Element {
 	uint32_t flags; // First 16 bits are element specific.
@@ -37,6 +43,7 @@ typedef struct Element {
 	struct Element **children;
 	struct Window *window;
 	void *cp; // Context pointer (for user).
+	MessageHandler messageClass, messageUser;
 } Element;
 
 typedef struct Window {
@@ -69,7 +76,9 @@ typedef struct GlobalState {
 void Initialise();
 int MessageLoop();
 
-Element *ElementCreate(size_t bytes, Element *parent, uint32_t flags);
+Element *ElementCreate(size_t bytes, Element *parent, uint32_t flags, MessageHandler messageClass);
+int ElementMessage(Element *element, Message message, int di, void *dp);
+
 Window *WindowCreate(const char *cTitle, int width, int height);
 
 Rectangle RectangleMake(int l, int r, int t, int b);
@@ -131,9 +140,26 @@ void StringCopy(char **destination, size_t *destinationBytes, const char *source
 
 GlobalState global;
 
-Element *ElementCreate(size_t bytes, Element *parent, uint32_t flags)  {
+int ElementMessage(Element *element, Message message, int di, void *dp) {
+	if (element->messageUser) {
+		int result = element->messageUser(element, message, di, dp);
+
+		if (result) {
+			return result;
+		}
+	}
+
+	if (element->messageClass) {
+		return element->messageClass(element, message, di, dp);
+	} else {
+		return 0;
+	}
+}
+
+Element *ElementCreate(size_t bytes, Element *parent, uint32_t flags, MessageHandler messageClass)  {
 	Element *element = (Element *) calloc(1, bytes);
 	element->flags = flags;
+	element->messageClass = messageClass;
 
 	if (parent) {
 		element->window = parent->window;
@@ -173,8 +199,17 @@ LRESULT CALLBACK _WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM
 	return 0;
 }
 
+int _WindowMessage(Element *element, Message message, int di, void *dp) {
+	(void) element;
+	(void) message;
+	(void) di;
+	(void) dp;
+
+	return 0;
+}
+
 Window *WindowCreate(const char *cTitle, int width, int height) {
-	Window *window = (Window *) ElementCreate(sizeof(Window), NULL, 0);
+	Window *window = (Window *) ElementCreate(sizeof(Window), NULL, 0, _WindowMessage);
 	window->e.window = window;
 	global.windowCount++;
 	global.windows = realloc(global.windows, sizeof(Window *) * global.windowCount);
@@ -221,8 +256,17 @@ Window *_FindWindow(X11Window window) {
 	return NULL;
 }
 
+int _WindowMessage(Element *element, Message message, int di, void *dp) {
+	(void) element;
+	(void) message;
+	(void) di;
+	(void) dp;
+
+	return 0;
+}
+
 Window *WindowCreate(const char *cTitle, int width, int height) {
-	Window *window = (Window *) ElementCreate(sizeof(Window), NULL, 0);
+	Window *window = (Window *) ElementCreate(sizeof(Window), NULL, 0, _WindowMessage);
 	window->e.window = window;
 	global.windowCount++;
 	global.windows = realloc(global.windows, sizeof(Window *) * global.windowCount);
@@ -242,6 +286,7 @@ Window *WindowCreate(const char *cTitle, int width, int height) {
 }
 
 int MessageLoop() {
+
 	while (true) {
 		XEvent event;
 		XNextEvent(global.display, &event);
@@ -276,12 +321,39 @@ void Initialise() {
 // Test usage code.
 /////////////////////////////////////////
 
+#include <stdio.h>
 
+Element *elementA, *elementB;
+
+int ElementAMessageClass(Element *element, Message message, int di, void *dp) {
+	(void) element;
+	printf("A class: %d, %d, %p\n", message, di, dp);
+	return message == MSG_USER + 1;
+}
+
+int ElementAMessageUser(Element *element, Message message, int di, void *dp) {
+	(void) element;
+	printf("A user: %d, %d, %p\n", message, di, dp);
+	return message == MSG_USER + 2;
+}
+
+int ElementBMessageClass(Element *element, Message message, int di, void *dp) {
+	(void) element;
+	printf("B class: %d, %d, %p\n", message, di, dp);
+	return 0;
+}
 
 int main() {
 	Initialise();
 	Window *window = WindowCreate("Hello, world", 300, 200);
-	Element *parent = ElementCreate(sizeof(Element), &window->e, 0);
-	ElementCreate(sizeof(Element), parent, 0);
+	elementA = ElementCreate(sizeof(Element), &window->e, 0, ElementAMessageClass);
+	elementA->messageUser = ElementAMessageUser;
+	elementB = ElementCreate(sizeof(Element), elementA, 0, ElementBMessageClass);
+	printf("%d\n", ElementMessage(elementA, MSG_USER + 1, 1, NULL));
+	printf("%d\n", ElementMessage(elementA, MSG_USER + 2, 2, NULL));
+	printf("%d\n", ElementMessage(elementA, MSG_USER + 3, 3, NULL));
+	printf("%d\n", ElementMessage(elementB, MSG_USER + 1, 1, NULL));
+	printf("%d\n", ElementMessage(elementB, MSG_USER + 2, 2, NULL));
+	printf("%d\n", ElementMessage(elementB, MSG_USER + 3, 3, NULL));
 	return MessageLoop();
 }
