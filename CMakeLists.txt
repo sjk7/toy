@@ -4,6 +4,7 @@ project(toy VERSION 0.1.0 LANGUAGES C CXX)
 include(CTest)
 enable_testing()
 
+
 if (UNIX)
     add_definitions(-DPLATFORM_LINUX)
     message(STATUS "** UNIX (Mac, Linux compile **)")
